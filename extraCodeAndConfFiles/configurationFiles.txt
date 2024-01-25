@@ -1,0 +1,166 @@
+*******************************************************
+
+pi@raspez:/etc $ cat msmtprc 
+account default
+host smtp.libero.it
+port 465
+logfile /tmp/msmtp.log
+tls on
+tls_starttls off
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+auth login
+user ingezio
+password Liber0Liber0@
+from ingezio@libero.it
+
+# OLD MTA alice...
+
+#account default
+#host out.alice.it
+#port 587
+#logfile /tmp/msmtp.log
+#tls on
+#tls_starttls on
+#tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+#auth login
+#user funkycactus
+#password Dorem1f@
+#from funkycactus@alice.it
+
+*******************************************************
+
+pi@raspez:/etc/nginx $ cat nginx.conf 
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+	worker_connections 768;
+	# multi_accept on;
+}
+
+http {
+
+	##
+	# Basic Settings
+	##
+
+	sendfile on;
+	tcp_nopush on;
+	tcp_nodelay on;
+	keepalive_timeout 65;
+	types_hash_max_size 2048;
+	# server_tokens off;
+
+	# server_names_hash_bucket_size 64;
+	# server_name_in_redirect off;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	##
+	# SSL Settings
+	##
+
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
+	ssl_prefer_server_ciphers on;
+
+	##
+	# Logging Settings
+	##
+
+	access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
+
+	##
+	# Gzip Settings
+	##
+
+	gzip on;
+
+	# gzip_vary on;
+	# gzip_proxied any;
+	# gzip_comp_level 6;
+	# gzip_buffers 16 8k;
+	# gzip_http_version 1.1;
+	# gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+	##
+	# Virtual Host Configs
+	##
+
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+}
+
+*******************************************************
+
+pi@raspez:/etc/nginx/sites-available $ ls -lah
+total 16K
+drwxr-xr-x 2 root root 4.0K Jan 19 12:54 .
+drwxr-xr-x 8 root root 4.0K Jan 18 16:29 ..
+-rw-r--r-- 1 root root 2.4K Nov 22  2022 default
+-rw-r--r-- 1 root root  160 Jan 19 12:54 lab_app
+
+pi@raspez:/etc/nginx/sites-available $ cat lab_app 
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+    include uwsgi_params;
+    uwsgi_pass unix:/var/www/lab_app/lab_app_uwsgi.sock;
+    }
+}
+
+pi@raspez:/etc/nginx/sites-available $ cd ../sites-enabled/
+
+pi@raspez:/etc/nginx/sites-enabled $ ls -lah
+total 8.0K
+drwxr-xr-x 2 root root 4.0K Jan 19 12:53 .
+drwxr-xr-x 8 root root 4.0K Jan 18 16:29 ..
+lrwxrwxrwx 1 root root   34 Jan 19 12:51 lab_app -> /etc/nginx/sites-available/lab_app
+
+
+*******************************************************
+
+pi@raspez:/ $ crontab -l
+# ... 
+*/10 * * * * /home/pi/bin/extip.sh
+
+
+pi@raspez:/ $ sudo crontab -l
+# ...
+#DISABILITARE NOTIFICHE MAIL A ROOT LEGATE ALLE ATTIVITA' DI CRON (root)
+MAILTO=""
+
+#*/1 * * * * /var/www/lab_app/bin/python /var/www/lab_app/env_log.py
+*/10 * * * * /usr/bin/python /var/www/lab_app/env_log.py
+
+*******************************************************
+
+pi@raspez:/etc/systemd/system $ cat lab_app_uwsgi.service 
+[Unit]
+Description=uWSGI service for lab_app
+After=network.target
+
+[Service]
+#www-data ha tutti gli accessi per far funzionare il servizio uwsgi???? 
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/lab_app
+Environment="PATH=/var/www/lab_app/bin"
+ExecStart=/var/www/lab_app/bin/uwsgi --ini /var/www/lab_app/lab_app_uwsgi.ini
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
+
+*******************************************************

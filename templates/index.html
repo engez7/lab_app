@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Lab Home page</title>
+    <meta name="description" content="Lab Mome Page">
+    <meta name="author" content="Ezio">
+    <!-- Mobile Specific Metas --> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- FONT -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/normalize.css">
+    <link rel="stylesheet" href="/static/css/skeleton.css">
+  </head>
+  <body>
+    </br>
+     <div class="container">
+       <h2>Welcome to Ezio's LAB</h2>
+       </br></br>
+       <h4>Get <a href='/lab_temp'>current Temp & Hum </a> on my RPi4</h4>
+       </br></br>    
+      <form action="/light_on/" method="post">
+        <input class="button-primary" type="submit" value="Light ON">
+      </form>
+      <form action="/light_off/" method="post">
+        <input class="button-primary" type="submit" value="Light OFF">
+      </form>
+      </br>
+      {% if light %}
+      <h4>Light is ON!</h4>
+      {% endif %}
+      </br></br>
+      <form action="/shot/" method="post">
+        <input class="button-primary" type="submit" value="Shot">
+      </form></br>
+      <h4><a href='/lab_photo'>Last LAB photo</a></h4>
+    </div>
+  </body>
+</html>

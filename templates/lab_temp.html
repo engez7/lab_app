@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lab Conditions by RPi</title>
+  <meta http-equiv="refresh" content="10">
+  <meta name="description" content="Lab conditions - RPi">
+  <meta name="author" content="Ezio">
+  <!-- Mobile Specific Metas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- FONT -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/normalize.css">
+  <link rel="stylesheet" href="/static/css/skeleton.css">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/static/images/favicon.png">
+</head>
+  <body>
+    </br>
+    <div class="container">
+      <a href="/">Home</a></br>
+      <a href="/lab_env_db">Temp & Hum database</a></br></br>
+      <div class="row">
+        <div class="two-third column" style="margin-top: 5%">
+            <h3>Real time lab conditions</h3>
+            <h4>Temperature: {{"{0:0.1f}".format(temp) }}°C</h4>
+            <h4>Humidity: {{"{0:0.1f}".format(hum)}}%</h4></br></br>
+            <p>Page refreshing every 10 minutes</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+import network
+from umqtt.simple import MQTTClient
+from machine import Pin
+import time
+import dht 
+
+# Set client STATIC IP!!
+# For ESP-8266 from 192.168.1.101...
+CLIENT_IP = "192.168.1.102"
+
+CLIENT_IP_NETMASK = "255.255.255.0"
+ROUTER_IP = "192.168.1.1"
+DNS_IP = "8.8.8.8"
+
+MQTT_CLIENT_ID = "esp_client_z01_n02" #client zone 01 number 02
+MQTT_SERVER = "192.168.1.254"
+MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01" # temperature and humidity zone 01
+
+WIFI_SSID = "Vodafone-36681141"
+WIFI_PASSWORD = "edtuyy76c3925yw"
+
+# To wait to publish at least 5 s...
+last_message = 0
+message_interval = 5
+
+led = Pin(2, Pin.OUT) #ESP-8622 Wemos -> GPIO2 = D4+led
+sensor = dht.DHT22(Pin(0)) #DHT-22 -> GPIO0 = D3
+
+# WiFi connectivity function.
+def connectWIFI():
+    # Create interface AP Access Point and disable it
+    ap_if = network.WLAN(network.AP_IF)
+    ap_if.active(False)
+    # Create interface as STAtion
+    sta_if = network.WLAN(network.STA_IF)
+    
+    if not sta_if.isconnected():
+          print('Connecting to wifi...')
+    # Enable the interface
+    sta_if.active(True)
+    # Connect
+    sta_if.ifconfig((CLIENT_IP,CLIENT_IP_NETMASK,ROUTER_IP,DNS_IP))
+    sta_if.connect(WIFI_SSID,WIFI_PASSWORD)
+    # Wait till connection is established
+    while not sta_if.isconnected():
+        sta_if.active(True)
+        pass
+
+    print ("Wifi connected")  
+    print(sta_if.ifconfig())
+  
+def read_sensor():
+    try:
+        sensor.measure()
+        temp = sensor.temperature()
+        hum = sensor.humidity()
+        if (isinstance(temp, float) and isinstance(hum, float)) or (isinstance(temp, int) and isinstance(hum, int)):
+            temp = ('{0:3.1f}'.format(temp))
+            hum =  ('{0:3.1f}'.format(hum))
+            return temp, hum
+        else:
+            return('Invalid sensor readings.')
+    except OSError as e:
+        return('Failed to read sensor.')
+
+
+try:
+    # Led ON during wifi and MQTT connection
+    led.value(0)
+    connectWIFI()
+    c = MQTTClient(MQTT_CLIENT_ID, MQTT_SERVER)
+    c.connect()
+    print("MQTT connected and ready to publish message")
+    # Led pulse before OFF if ESP-8266 connected to wifi and to MQTT broker
+    led.value(1)
+    time.sleep(0.3)
+    led.value(0)
+    time.sleep(0.3)
+    led.value(1)
+    time.sleep(0.3)
+    led.value(0)
+    time.sleep(0.3)
+    led.value(1)
+    while True:
+        if (time.time() - last_message) > message_interval:
+            temp, hum = read_sensor()
+            print(temp)
+            print(hum)
+            c.publish(MQTT_TOPIC_TEMPHUM, str(temp)+","+str(hum), retain=False, qos=1)
+            last_message = time.time()
+            
+finally:
+    print("Error!")
+    c.disconnect()
+

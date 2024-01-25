@@ -1,0 +1,82 @@
+import network
+from umqtt.simple import MQTTClient
+from machine import Pin
+from time import sleep
+
+# Set client STATIC IP!!
+# For ESP-8266 from 192.168.1.101...
+CLIENT_IP = "192.168.1.101"
+
+CLIENT_IP_NETMASK = "255.255.255.0"
+ROUTER_IP = "192.168.1.1"
+DNS_IP = "8.8.8.8"
+
+MQTT_CLIENT_ID = "esp_client_z01_n01" # client zone 01 number 01
+MQTT_SERVER = "192.168.1.254"
+MQTT_TOPIC = b"esp/relay/thermo_z01"
+
+WIFI_SSID = "Vodafone-36681141"
+WIFI_PASSWORD = "edtuyy76c3925yw"
+
+led = Pin(2, Pin.OUT) #ESP-8622 Wemos -> GPIO2 = D4+led
+rel = Pin(0, Pin.OUT) #ESP-8622 Wemos -> GPIO0 = D3
+
+# WiFi connectivity function.
+def connectWIFI():
+    # Create interface AP Access Point and disable it
+    ap_if = network.WLAN(network.AP_IF)
+    ap_if.active(False)
+    # Create interface as STAtion
+    sta_if = network.WLAN(network.STA_IF)
+    
+    if not sta_if.isconnected():
+          print('Connecting to wifi...')
+    # Enable the interface
+    sta_if.active(True)
+    # Connect
+    sta_if.ifconfig((CLIENT_IP,CLIENT_IP_NETMASK,ROUTER_IP,DNS_IP))
+    sta_if.connect(WIFI_SSID,WIFI_PASSWORD)
+    # Wait till connection is established
+    while not sta_if.isconnected():
+        sta_if.active(True)
+        pass
+
+    print ("Wifi connected")  
+    print(sta_if.ifconfig())
+  
+#MQTT callback service function
+def sub_cb(topic, msg): 
+    print(topic, msg)
+    if topic.decode() == MQTT_TOPIC.decode() and msg.decode() == 'ON':
+        led.value(0)
+        rel.value(1)
+        print("LED is ON")
+    if topic.decode() == MQTT_TOPIC.decode() and msg.decode() == 'OFF':
+        led.value(1)
+        rel.value(0)
+        print("LED is OFF")
+
+try:
+    # Led ON during wifi and MQTT connection
+    led.value(0)
+    connectWIFI()
+    c = MQTTClient(MQTT_CLIENT_ID,MQTT_SERVER)
+    c.set_callback(sub_cb)
+    c.connect()
+    c.subscribe(MQTT_TOPIC)
+    print("MQTT connected and ready to receive message")
+    # Led pulse before OFF if ESP-8266 connected to wifi and to MQTT broker
+    led.value(1)
+    sleep(0.3)
+    led.value(0)
+    sleep(0.3)
+    led.value(1)
+    sleep(0.3)
+    led.value(0)
+    sleep(0.3)
+    led.value(1)
+    while True:
+        c.wait_msg()
+finally:
+    print("Error!")
+    c.disconnect()
