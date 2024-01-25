@@ -1,5 +1,3 @@
-#TESTING PULL FROM ORIGIN...
-
 from flask import Flask, request, render_template
 import time
 import datetime
