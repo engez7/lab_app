@@ -26,7 +26,7 @@ from ingezio@libero.it
 
 #auth login
 #user funkycactus
-#password Dorem1f@
+#password *************
 #from funkycactus@alice.it
 
 *******************************************************
@@ -127,20 +127,35 @@ lrwxrwxrwx 1 root root   34 Jan 19 12:51 lab_app -> /etc/nginx/sites-available/l
 
 *******************************************************
 
-pi@raspez:/ $ crontab -l
-# ... 
-*/10 * * * * /home/pi/bin/extip.sh
+STARTUP PROGRAMS...
 
-
-pi@raspez:/ $ sudo crontab -l
+pi@raspez:~ $ cat /etc/rc.local
+#!/bin/sh -e
 # ...
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+
+# wait 20 sec for network configuration (script needs ip_add!!)
+sleep 20
+/usr/bin/python /var/www/lab_app/env_log.py  &
+
+exit 0
+
+pi@raspez:~ $ sudo crontab -l
 #DISABILITARE NOTIFICHE MAIL A ROOT LEGATE ALLE ATTIVITA' DI CRON (root)
 MAILTO=""
+#CHECK IP_ADD_PUB and SENDMAIL if modified!
+*/10 * * * * /home/pi/bin/extip.sh
 
-#*/1 * * * * /var/www/lab_app/bin/python /var/www/lab_app/env_log.py
-*/10 * * * * /usr/bin/python /var/www/lab_app/env_log.py
+pi@raspez:~ $ crontab -l
+# NOTHING!!
 
 *******************************************************
+
+DISABLE UWSGI EMPEROR SERVICE... USEFULL FOR MULTI APP UWSGI SERVICE...
 
 pi@raspez:/etc/systemd/system $ cat lab_app_uwsgi.service 
 [Unit]
@@ -164,3 +179,4 @@ NotifyAccess=all
 WantedBy=multi-user.target
 
 *******************************************************
+

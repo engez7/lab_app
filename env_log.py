@@ -32,8 +32,8 @@ def on_message(client, userdata, msg):
         log_values("DHT_01", temperature, humidity)
 
         # Wait 10 minutes before return to listening status
-        time.sleep(60) #Testing with 1 min...
-        
+        time.sleep(600)
+
         # Chiudi il programma dopo aver gestito il messaggio
         #client.disconnect()
         #sys.exit()
