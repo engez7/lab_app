@@ -40,6 +40,8 @@ print("Connecting to broker ",MQTT_SERVER)
 client.connect(MQTT_SERVER)      #connect to broker
 
 client.loop_forever()
+
+#MOD1 to test VSCode --> GitHUb
 '''
 import paho.mqtt.client as mqtt
 import sqlite3
