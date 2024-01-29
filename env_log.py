@@ -3,7 +3,7 @@ import sqlite3
 import time
 #import sys
 
-MQTT_SERVER = "192.168.1.254"
+MQTT_SERVER = "127.0.0.1"
 MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01"
 
 def log_values(sensor_id, temp, hum):
