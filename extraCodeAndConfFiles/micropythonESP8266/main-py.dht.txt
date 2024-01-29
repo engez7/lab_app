@@ -1,6 +1,20 @@
+'''
+ESP 8266 keep try WiFi and MQTT connections if lost... Difficult to check in runtime with Thonny if ESP8266 restarting... process issues... 
+BUT IT SEEMS TO WORK!! 
+
+TODO...
+
+Check:
+RASPEZ (MQTT) broker restart
+ROUTER restart
+ESP 8266 restart
+
+modify also thermo sketch...
+'''
+
 import network
 from umqtt.simple import MQTTClient
-from machine import Pin
+from machine import Pin, reset
 import time
 import dht 
 
@@ -15,6 +29,7 @@ DNS_IP = "8.8.8.8"
 MQTT_CLIENT_ID = "esp_client_z01_n02" #client zone 01 number 02
 MQTT_SERVER = "192.168.1.254"
 MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01" # temperature and humidity zone 01
+mqtt_connected = False # flag for... mqtt is connected or not
 
 WIFI_SSID = "Vodafone-36681141"
 WIFI_PASSWORD = "edtuyy76c3925yw"
@@ -33,22 +48,46 @@ def connectWIFI():
     ap_if.active(False)
     # Create interface as STAtion
     sta_if = network.WLAN(network.STA_IF)
+    print('WIFI connection: ', sta_if.isconnected())
     
     if not sta_if.isconnected():
-          print('Connecting to wifi...')
-    # Enable the interface
-    sta_if.active(True)
-    # Connect
-    sta_if.ifconfig((CLIENT_IP,CLIENT_IP_NETMASK,ROUTER_IP,DNS_IP))
-    sta_if.connect(WIFI_SSID,WIFI_PASSWORD)
-    # Wait till connection is established
-    while not sta_if.isconnected():
+        print('Connecting to wifi...')
+        # Enable the interface
         sta_if.active(True)
-        pass
+        # Connect
+        sta_if.ifconfig((CLIENT_IP,CLIENT_IP_NETMASK,ROUTER_IP,DNS_IP))
+        sta_if.connect(WIFI_SSID,WIFI_PASSWORD)
+        # Wait till connection is established
+        while not sta_if.isconnected():
+            pass
 
-    print ("Wifi connected")  
-    print(sta_if.ifconfig())
-  
+        print("Wifi connected")  
+        print(sta_if.ifconfig())
+
+def connectMQTT(c):
+    global mqtt_connected
+    while True:
+        try:
+            print("MQTT connecting...")
+            c.connect()
+            mqtt_connected = True
+            print("MQTT connected and ready to publish message")
+            # Led pulse before OFF if ESP-8266 connected to wifi and to MQTT broker
+            led.value(1)
+            time.sleep(0.3)
+            led.value(0)
+            time.sleep(0.3)
+            led.value(1)
+            time.sleep(0.3)
+            led.value(0)
+            time.sleep(0.3)
+            led.value(1)
+            break
+        except OSError as e:
+            print("MQTT connection failed, retrying...")
+            mqtt_connected = False
+            time.sleep(10)
+
 def read_sensor():
     try:
         sensor.measure()
@@ -63,33 +102,38 @@ def read_sensor():
     except OSError as e:
         return('Failed to read sensor.')
 
-
 try:
     # Led ON during wifi and MQTT connection
     led.value(0)
     connectWIFI()
     c = MQTTClient(MQTT_CLIENT_ID, MQTT_SERVER)
-    c.connect()
-    print("MQTT connected and ready to publish message")
-    # Led pulse before OFF if ESP-8266 connected to wifi and to MQTT broker
-    led.value(1)
-    time.sleep(0.3)
-    led.value(0)
-    time.sleep(0.3)
-    led.value(1)
-    time.sleep(0.3)
-    led.value(0)
-    time.sleep(0.3)
-    led.value(1)
+    connectMQTT(c)
+
     while True:
+
+        if not network.WLAN(network.STA_IF).isconnected():
+            print("WiFi disconnected, reconnecting...")
+            connectWIFI()
+
+        if not mqtt_connected:
+            print("MQTT disconnected, reconnecting...")
+            connectMQTT(c)
+
         if (time.time() - last_message) > message_interval:
             temp, hum = read_sensor()
             print(temp)
             print(hum)
-            c.publish(MQTT_TOPIC_TEMPHUM, str(temp)+","+str(hum), retain=False, qos=1)
-            last_message = time.time()
+            if mqtt_connected:
+                c.publish(MQTT_TOPIC_TEMPHUM, str(temp)+","+str(hum), retain=False, qos=1)
+                last_message = time.time()
+            else:
+                print("MQTT connection lost, unable to publish message")
             
 finally:
-    print("Error!")
-    c.disconnect()
+    print("Error! Disconnecting and resetting...")
+    try:
+        c.disconnect()
+    except OSError as e:
+        print("Error disconnecting from MQTT broker:", e)
+    reset()  # Restart ESP8266 in case of an error
 
