@@ -20,7 +20,7 @@ def T1_on():
 
 @app.route("T1_off/", methods=['POST'])
 def T1_off():
-    #LOGICA PER T1 OFF (MQTT) e passare a index il T1_status (ON)
+    #LOGICA PER T1 OFF (MQTT) e passare a index il T1_status (OFF)
     return render_template('index.html', T1_status=T1_status)
 '''
 
@@ -32,7 +32,7 @@ def PANEL_on():
 
 @app.route("PANEL_off/", methods=['POST'])
 def PANEL_off():
-    #LOGICA PER PANEL OFF (MQTT) e passare a index il PANEL_status (ON)
+    #LOGICA PER PANEL OFF (MQTT) e passare a index il PANEL_status (OFF)
     return render_template('index.html', PANEL_status=PANEL_status)
 '''
 
