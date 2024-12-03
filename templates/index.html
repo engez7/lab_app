@@ -18,23 +18,23 @@
      <div class="container">
        <h2>Welcome to Ezio's LAB</h2>
        </br></br>
-       <h4>Get <a href='/lab_temp'>current Temp & Hum </a> on my RPi4</h4>
+       <h4>Get <a href='/lab_temp'>current Temp & Hum </a></h4>
        </br></br>    
-      <form action="/light_on/" method="post">
-        <input class="button-primary" type="submit" value="Light ON">
+      <form action="/T1_on/" method="post">
+        <input class="button-primary" type="submit" value="T1 ON">        <!-- Controllare contenuto e effetto di "value" -->
       </form>
-      <form action="/light_off/" method="post">
-        <input class="button-primary" type="submit" value="Light OFF">
+      <form action="/T1_off/" method="post">
+        <input class="button-primary" type="submit" value="T1 OFF">       <!-- Controllare contenuto e effetto di "value" -->
       </form>
       </br>
-      {% if light %}
-      <h4>Light is ON!</h4>
+      {% if T1_status %}                     <!-- Controllare T1_status... rif. lab_app.py -->
+      <h4>T1 is ON!</h4>
       {% endif %}
+
+<!-- AGGIUNGERE PARTE PANEL -->
+       
       </br></br>
-      <form action="/shot/" method="post">
-        <input class="button-primary" type="submit" value="Shot">
-      </form></br>
-      <h4><a href='/lab_photo'>Last LAB photo</a></h4>
+      <h4><a href='/lab_photos'>LAB photos</a></h4>
     </div>
   </body>
 </html>
