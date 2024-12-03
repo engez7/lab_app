@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import time
 import datetime
 import sqlite3
+# AGGIUNGERE MODULI x MQTT
 
 app = Flask(__name__)
 
@@ -10,6 +11,34 @@ app.debug = True  # Set to False if you are no longer debugging
 @app.route("/")
 def index():
     return render_template('index.html')
+
+''' T1
+@app.route("T1_on/", methods=['POST'])
+def T1_on():
+    #LOGICA PER T1 ON (MQTT) e passare a index il T1_status (ON)
+    return render_template('index.html', T1_status=T1_status)
+
+@app.route("T1_off/", methods=['POST'])
+def T1_off():
+    #LOGICA PER T1 OFF (MQTT) e passare a index il T1_status (ON)
+    return render_template('index.html', T1_status=T1_status)
+'''
+
+''' PANEL
+@app.route("PANEL_on/", methods=['POST'])
+def PANEL_on():
+    #LOGICA PER PANEL ON (MQTT) e passare a index il PANEL_status (ON)
+    return render_template('index.html', PANEL_status=PANEL_status)
+
+@app.route("PANEL_off/", methods=['POST'])
+def PANEL_off():
+    #LOGICA PER PANEL OFF (MQTT) e passare a index il PANEL_status (ON)
+    return render_template('index.html', PANEL_status=PANEL_status)
+'''
+
+@app.route("/lab_photos")
+def lab_photos():
+    return render_template('lab_photos.html')
 
 @app.route("/lab_temp")
 def lab_temp():
