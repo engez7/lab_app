@@ -9,6 +9,9 @@ MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01"
 def log_values(sensor_id, temp, hum):
     conn = sqlite3.connect('/var/www/lab_app/lab_app.db')
     curs = conn.cursor()
+    # Elimina i record con data precedente a 90 giorni fa
+    curs.execute("DELETE FROM temphum WHERE datetime < datetime('now', '-90 days')")
+    # Inserisci nuovo record
     curs.execute("INSERT INTO temphum VALUES (datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
     conn.commit()
     conn.close()
