@@ -112,4 +112,5 @@ def validate_date(d):
 
 if __name__ == "__main__":
     mqtt_client.loop_start()            # Avvia il loop MQTT
-    app.run(host='0.0.0.0', port=8080)
+    # TOLGO app.run() poiché uWSGI gestisce ascolto, non serve  attivare anche l'app...
+    #app.run(host='0.0.0.0', port=8080)
