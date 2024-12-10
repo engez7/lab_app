@@ -2,39 +2,42 @@ from flask import Flask, request, render_template
 import time
 import datetime
 import sqlite3
-# AGGIUNGERE MODULI x MQTT
+import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
-
 app.debug = True  # Set to False if you are no longer debugging
+
+# Configurazione MQTT
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+MQTT_TOPIC_RELAY = "esp/relay/thermo_z01"
+
+mqtt_client = mqtt.Client()
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
 
 @app.route("/")
 def index():
     return render_template('index.html')
 
-''' T1
-@app.route("T1_on/", methods=['POST'])
+# T1 CONTROL
+
+T1_status = "OFF"  # Stato iniziale del relay
+
+@app.route("/T1_on/", methods=['POST'])
 def T1_on():
-    #LOGICA PER T1 ON (MQTT) e passare a index il T1_status (ON)
+    global T1_status
+    mqtt_client.publish(MQTT_TOPIC_RELAY, "ON")  # Pubblica il comando MQTT
+    T1_status = "ON"
     return render_template('index.html', T1_status=T1_status)
 
-@app.route("T1_off/", methods=['POST'])
+@app.route("/T1_off/", methods=['POST'])
 def T1_off():
-    #LOGICA PER T1 OFF (MQTT) e passare a index il T1_status (OFF)
+    global T1_status
+    mqtt_client.publish(MQTT_TOPIC_RELAY, "OFF")  # Pubblica il comando MQTT
+    T1_status = "OFF"
     return render_template('index.html', T1_status=T1_status)
-'''
 
-''' PANEL
-@app.route("PANEL_on/", methods=['POST'])
-def PANEL_on():
-    #LOGICA PER PANEL ON (MQTT) e passare a index il PANEL_status (ON)
-    return render_template('index.html', PANEL_status=PANEL_status)
-
-@app.route("PANEL_off/", methods=['POST'])
-def PANEL_off():
-    #LOGICA PER PANEL OFF (MQTT) e passare a index il PANEL_status (OFF)
-    return render_template('index.html', PANEL_status=PANEL_status)
-'''
+# SAME FOR T2 and PANEL... WIP!!!
 
 @app.route("/lab_photos")
 def lab_photos():
@@ -108,4 +111,5 @@ def validate_date(d):
         return False
 
 if __name__ == "__main__":
+    mqtt_client.loop_start()            # Avvia il loop MQTT
     app.run(host='0.0.0.0', port=8080)
