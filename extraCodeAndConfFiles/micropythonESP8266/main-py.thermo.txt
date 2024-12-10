@@ -15,8 +15,8 @@ MQTT_CLIENT_ID = "esp_client_z01_n01" # client zone 01 number 01
 MQTT_SERVER = "192.168.1.254"
 MQTT_TOPIC = b"esp/relay/thermo_z01"
 
-WIFI_SSID = "Vodafone-36681141"
-WIFI_PASSWORD = "edtuyy76c3925yw"
+WIFI_SSID = "TIM-43200697"
+WIFI_PASSWORD = "Jm2bdPATr7eZep6Z9KAefcGk"
 
 led = Pin(2, Pin.OUT) #ESP-8622 Wemos -> GPIO2 = D4+led
 rel = Pin(0, Pin.OUT) #ESP-8622 Wemos -> GPIO0 = D3
@@ -57,6 +57,18 @@ def sub_cb(topic, msg):
         print("LED is OFF")
 
 try:
+    # Pulse and sleep 3 min before connections to wait router and raspberry broker reboot after electrical blackout
+    print("Waiting 3 min before connections...")
+    led.value(1)
+    sleep(0.3)
+    led.value(0)
+    sleep(0.3)
+    led.value(1)
+    sleep(0.3)
+    led.value(0)
+    sleep(0.3)
+    led.value(1)
+    sleep(180)
     # Led ON during wifi and MQTT connection
     led.value(0)
     connectWIFI()
