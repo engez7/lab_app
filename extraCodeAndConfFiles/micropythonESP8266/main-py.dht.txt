@@ -1,17 +1,3 @@
-'''
-ESP 8266 keep try WiFi and MQTT connections if lost... Difficult to check in runtime with Thonny if ESP8266 restarting... process issues... 
-BUT IT SEEMS TO WORK!! 
-
-TODO...
-
-Check:
-RASPEZ (MQTT) broker restart
-ROUTER restart
-ESP 8266 restart
-
-modify also thermo sketch...
-'''
-
 import network
 from umqtt.simple import MQTTClient
 from machine import Pin, reset
@@ -22,6 +8,8 @@ import dht
 # For ESP-8266 from 192.168.1.101...
 CLIENT_IP = "192.168.1.102"
 
+#CLIENT_HOST_NAME = "DHT_z01_n02"    #NON FUNZIONA: LA VODAFONE STATION NON VEDE IL NOME DELL'ESP8266!!!
+
 CLIENT_IP_NETMASK = "255.255.255.0"
 ROUTER_IP = "192.168.1.1"
 DNS_IP = "8.8.8.8"
@@ -31,8 +19,8 @@ MQTT_SERVER = "192.168.1.254"
 MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01" # temperature and humidity zone 01
 mqtt_connected = False # flag for... mqtt is connected or not
 
-WIFI_SSID = "Vodafone-36681141"
-WIFI_PASSWORD = "edtuyy76c3925yw"
+WIFI_SSID = "TIM-43200697"
+WIFI_PASSWORD = "Jm2bdPATr7eZep6Z9KAefcGk"
 
 # To wait to publish at least 5 s...
 last_message = 0
@@ -56,6 +44,7 @@ def connectWIFI():
         sta_if.active(True)
         # Connect
         sta_if.ifconfig((CLIENT_IP,CLIENT_IP_NETMASK,ROUTER_IP,DNS_IP))
+        #sta_if.config(dhcp_hostname = CLIENT_HOST_NAME)        #NON FUNZIONA: LA VODAFONE STATION NON VEDE IL NOME DELL'ESP8266!!!
         sta_if.connect(WIFI_SSID,WIFI_PASSWORD)
         # Wait till connection is established
         while not sta_if.isconnected():
@@ -106,7 +95,7 @@ try:
     # Led ON during wifi and MQTT connection
     led.value(0)
     connectWIFI()
-    c = MQTTClient(MQTT_CLIENT_ID, MQTT_SERVER)
+    c = MQTTClient(MQTT_CLIENT_ID, MQTT_SERVER, keepalive=60)
     connectMQTT(c)
 
     while True:
@@ -136,4 +125,3 @@ finally:
     except OSError as e:
         print("Error disconnecting from MQTT broker:", e)
     reset()  # Restart ESP8266 in case of an error
-
