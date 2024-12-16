@@ -1,7 +1,7 @@
 import network
 from umqtt.simple import MQTTClient
 from machine import Pin
-from time import sleep
+from time import sleep, time
 
 # Set client STATIC IP!!
 # For ESP-8266 from 192.168.1.101...
@@ -72,7 +72,7 @@ try:
     # Led ON during wifi and MQTT connection
     led.value(0)
     connectWIFI()
-    c = MQTTClient(MQTT_CLIENT_ID,MQTT_SERVER)
+    c = MQTTClient(MQTT_CLIENT_ID,MQTT_SERVER, keepalive=120) # Broker waits 2 min before disconnect passive client
     c.set_callback(sub_cb)
     c.connect()
     c.subscribe(MQTT_TOPIC)
@@ -87,8 +87,18 @@ try:
     led.value(0)
     sleep(0.3)
     led.value(1)
+    
+    last_ping_time = time()  # Timestamp per il ping
+    ping_interval = 60  # Intervallo per il ping (in secondi)
+    
     while True:
-        c.wait_msg()
+        c.check_msg()
+        
+        # Invia ping al broker ogni 10 secondi per mantenere la connessione attiva
+        if time() - last_ping_time >= ping_interval:
+            c.publish(MQTT_TOPIC, "ping")  # Invia il ping
+            last_ping_time = time()  # Aggiorna il timestamp del ping
+
 finally:
     print("Error!")
     c.disconnect()
