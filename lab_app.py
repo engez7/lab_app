@@ -4,48 +4,54 @@ import datetime
 import sqlite3
 import paho.mqtt.client as mqtt
 
+# Configurazione dell'app Flask
 app = Flask(__name__)
-app.debug = True  # Set to False if you are no longer debugging
+app.debug = True  # Cambia a False quando non è più necessario il debug
 
 # Configurazione MQTT
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
 MQTT_TOPIC_RELAY = "esp/relay/thermo_z01"
 
-mqtt_client = mqtt.Client()
-mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
+# Funzione per connettersi e pubblicare il messaggio MQTT
+def send_mqtt_message(message):
+    mqtt_client = mqtt.Client()
+    mqtt_client.connect(MQTT_BROKER, MQTT_PORT)  # Connessione al broker MQTT
+
+    # Invia il messaggio
+    mqtt_client.publish(MQTT_TOPIC_RELAY, message)
+
+    mqtt_client.disconnect()  # Disconnessione dal broker MQTT
+
+# T1 CONTROL
+T1_status = "OFF"  # Stato iniziale del relay
 
 @app.route("/")
 def index():
     return render_template('index.html')
 
-# T1 CONTROL
-
-T1_status = "OFF"  # Stato iniziale del relay
-
 @app.route("/T1_on/", methods=['POST'])
 def T1_on():
     global T1_status
-    mqtt_client.publish(MQTT_TOPIC_RELAY, "ON")  # Pubblica il comando MQTT
+    send_mqtt_message("ON")  # Pubblica il comando MQTT
     T1_status = "ON"
     return render_template('index.html', T1_status=T1_status)
 
 @app.route("/T1_off/", methods=['POST'])
 def T1_off():
     global T1_status
-    mqtt_client.publish(MQTT_TOPIC_RELAY, "OFF")  # Pubblica il comando MQTT
+    send_mqtt_message("OFF")  # Pubblica il comando MQTT
     T1_status = "OFF"
     return render_template('index.html', T1_status=T1_status)
 
-# SAME FOR T2 and PANEL... WIP!!!
-
+# Rotta per visualizzare le foto del laboratorio
 @app.route("/lab_photos")
 def lab_photos():
     return render_template('lab_photos.html')
 
+# Rotta per visualizzare i dati di temperatura e umidità dal database
 @app.route("/lab_temp")
 def lab_temp():
-    # Retrieve values from the temphum table in lab_app.db...
     conn = sqlite3.connect('/var/www/lab_app/lab_app.db')
     curs = conn.cursor()
     curs.execute("SELECT temp, hum FROM temphum ORDER BY datetime DESC LIMIT 1")
@@ -59,33 +65,34 @@ def lab_temp():
         if humidity is not None and temperature is not None:
             return render_template("lab_temp.html", temp=temperature, hum=humidity)
 
-    return render_template("no_data.html")  # Add no_data page
+    return render_template("no_data.html")  # Aggiungi pagina no_data
 
-@app.route("/lab_env_db", methods=['GET'])  # Add date limits in the URL # Arguments: from=2015-03-04&to=2015-03-05
+# Rotta per filtrare e mostrare i dati del database
+@app.route("/lab_env_db", methods=['GET'])
 def lab_env_db():
     temp_result_tuple, hum_result_tuple, from_date_str, to_date_str = get_records()
     return render_template("lab_env_db.html", temp=temp_result_tuple, hum=hum_result_tuple, from_date=from_date_str,
                            to_date=to_date_str, temp_items=len(temp_result_tuple), hum_items=len(hum_result_tuple))
 
-# Review this function... DB WITH UNIQUE TABLE temphum... OTHER??
+# Funzione per recuperare i record dal database
 def get_records():
     from_date_str = request.args.get('from', time.strftime("%Y-%m-%d 00:00"))
     to_date_str = request.args.get('to', time.strftime("%Y-%m-%d %H:%M"))
-    range_h_form = request.args.get('range_h', '')  # This will return a string if field range_h exists in the request
+    range_h_form = request.args.get('range_h', '')  # Questo restituirà una stringa se il campo range_h esiste nella richiesta
 
-    range_h_int = "nan"  # initialize this variable with not a number
+    range_h_int = "nan"  # Inizializza questa variabile con "not a number"
 
     try:
         range_h_int = int(range_h_form)
     except ValueError:
-        print("range_h_form not a number")
+        print("range_h_form non è un numero")
 
-    if not validate_date(from_date_str):  # Validate date before sending it to the DB
+    if not validate_date(from_date_str):  # Valida la data prima di inviarla al database
         from_date_str = time.strftime("%Y-%m-%d 00:00")
     if not validate_date(to_date_str):
-        to_date_str = time.strftime("%Y-%m-%d %H:%M")  # Validate date before sending it to the DB
+        to_date_str = time.strftime("%Y-%m-%d %H:%M")  # Valida la data prima di inviarla al database
 
-    # If range_h is defined, we don't need the from and to times
+    # Se range_h è definito, sovrascrive i valori di from_date e to_date
     if isinstance(range_h_int, int):
         time_now = datetime.datetime.now()
         time_from = time_now - datetime.timedelta(hours=range_h_int)
@@ -103,6 +110,7 @@ def get_records():
 
     return [temp_result_tuple, hum_result_tuple, from_date_str, to_date_str]
 
+# Funzione per validare il formato della data
 def validate_date(d):
     try:
         datetime.datetime.strptime(d, '%Y-%m-%d %H:%M')
@@ -110,8 +118,7 @@ def validate_date(d):
     except ValueError:
         return False
 
-if __name__ == "__main__":
-    mqtt_client.loop_start()            # Avvia il loop MQTT
+
 
 # uWSGI to start the application
 
