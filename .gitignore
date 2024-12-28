@@ -1,0 +1,16 @@
+# Ignora i file del database
+lab_app.db
+
+# Ignora i file di log
+*.log
+
+# Ignora i file temporanei di socket
+*.sock
+
+# Ignora cartelle virtualenv
+bin/
+include/
+lib/
+share/
+__pycache__/
+
