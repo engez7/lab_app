@@ -3,6 +3,7 @@ lab_app.db
 
 # Ignora i file di log
 *.log
+log/
 
 # Ignora i file temporanei di socket
 *.sock
