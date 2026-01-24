@@ -1,4 +1,4 @@
-# Core dependencies - versioni fisse per compatibilità
+# Core dependencies - fixed versions for compatibility
 Flask==1.1.4
 Werkzeug==1.0.1
 Jinja2==2.11.3
@@ -9,7 +9,7 @@ click==7.1.2
 # MQTT client
 paho-mqtt==1.6.1
 
-# Hardware dependencies (Raspberry Pi specific) - versioni flessibili
+# Hardware dependencies (Raspberry Pi specific) - flexible versions
 Adafruit-Blinka
 adafruit-circuitpython-dht
 Adafruit-PlatformDetect
@@ -27,9 +27,9 @@ typing-extensions
 # WSGI server
 uWSGI
 
-# USB support (se necessario)
+# USB support (if needed)
 pyusb
 pyftdi
 
-# IPC (se necessario)
+# IPC (if needed)
 sysv-ipc
