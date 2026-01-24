@@ -3,25 +3,29 @@ import time
 import datetime
 import sqlite3
 import paho.mqtt.client as mqtt
+import logging
+from config import Config
+
+# Configurazione logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Configurazione dell'app Flask
 app = Flask(__name__)
-app.debug = True  # Cambia a False quando non è più necessario il debug
-
-# Configurazione MQTT
-MQTT_BROKER = "localhost"
-MQTT_PORT = 1883
-MQTT_TOPIC_RELAY = "esp/relay/thermo_z01"
+app.config.from_object(Config)
+app.debug = Config.DEBUG
 
 # Funzione per connettersi e pubblicare il messaggio MQTT
 def send_mqtt_message(message):
-    mqtt_client = mqtt.Client()
-    mqtt_client.connect(MQTT_BROKER, MQTT_PORT)  # Connessione al broker MQTT
-
-    # Invia il messaggio
-    mqtt_client.publish(MQTT_TOPIC_RELAY, message)
-
-    mqtt_client.disconnect()  # Disconnessione dal broker MQTT
+    try:
+        mqtt_client = mqtt.Client()
+        mqtt_client.connect(Config.MQTT_BROKER, Config.MQTT_PORT)
+        mqtt_client.publish(Config.MQTT_TOPIC_RELAY, message)
+        mqtt_client.disconnect()
+        logger.info(f"MQTT message sent: {message}")
+    except Exception as e:
+        logger.error(f"Failed to send MQTT message: {e}")
+        raise
 
 # T1 CONTROL
 T1_status = "OFF"  # Stato iniziale del relay
@@ -52,20 +56,24 @@ def lab_photos():
 # Rotta per visualizzare i dati di temperatura e umidità dal database
 @app.route("/lab_temp")
 def lab_temp():
-    conn = sqlite3.connect('/var/www/lab_app/lab_app.db')
-    curs = conn.cursor()
-    curs.execute("SELECT temp, hum FROM temphum ORDER BY datetime DESC LIMIT 1")
-    result_tuple = curs.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(Config.DB_PATH)
+        curs = conn.cursor()
+        curs.execute("SELECT temp, hum FROM temphum ORDER BY datetime DESC LIMIT 1")
+        result_tuple = curs.fetchall()
+        conn.close()
 
-    if result_tuple:
-        temperature = result_tuple[0][0]
-        humidity = result_tuple[0][1]
+        if result_tuple:
+            temperature = result_tuple[0][0]
+            humidity = result_tuple[0][1]
 
-        if humidity is not None and temperature is not None:
-            return render_template("lab_temp.html", temp=temperature, hum=humidity)
+            if humidity is not None and temperature is not None:
+                return render_template("lab_temp.html", temp=temperature, hum=humidity)
 
-    return render_template("no_data.html")  # Aggiungi pagina no_data
+        return render_template("no_sensor.html")
+    except Exception as e:
+        logger.error(f"Error reading temperature data: {e}")
+        return render_template("no_sensor.html")
 
 # Rotta per filtrare e mostrare i dati del database
 @app.route("/lab_env_db", methods=['GET'])
@@ -100,13 +108,18 @@ def get_records():
         from_date_str = time_from.strftime("%Y-%m-%d %H:%M")
         to_date_str = time_to.strftime("%Y-%m-%d %H:%M")
 
-    conn = sqlite3.connect('/var/www/lab_app/lab_app.db')
-    curs = conn.cursor()
-    curs.execute("SELECT datetime, temp FROM temphum WHERE datetime BETWEEN ? AND ?", (from_date_str, to_date_str))
-    temp_result_tuple = curs.fetchall()
-    curs.execute("SELECT datetime, hum FROM temphum WHERE datetime BETWEEN ? AND ?", (from_date_str, to_date_str))
-    hum_result_tuple = curs.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(Config.DB_PATH)
+        curs = conn.cursor()
+        curs.execute("SELECT datetime, temp FROM temphum WHERE datetime BETWEEN ? AND ?", (from_date_str, to_date_str))
+        temp_result_tuple = curs.fetchall()
+        curs.execute("SELECT datetime, hum FROM temphum WHERE datetime BETWEEN ? AND ?", (from_date_str, to_date_str))
+        hum_result_tuple = curs.fetchall()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error querying database: {e}")
+        temp_result_tuple = []
+        hum_result_tuple = []
 
     return [temp_result_tuple, hum_result_tuple, from_date_str, to_date_str]
 

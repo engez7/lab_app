@@ -1,52 +1,63 @@
 import paho.mqtt.client as mqtt
 import sqlite3
 import time
-#import sys
+import logging
+from config import Config
 
-MQTT_SERVER = "127.0.0.1"
-MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01"
+# Configurazione logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def log_values(sensor_id, temp, hum):
-    conn = sqlite3.connect('/var/www/lab_app/lab_app.db')
-    curs = conn.cursor()
-    # Elimina i record con data precedente a 90 giorni fa
-    curs.execute("DELETE FROM temphum WHERE datetime < datetime('now', '-90 days')")
-    # Inserisci nuovo record
-    curs.execute("INSERT INTO temphum VALUES (datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(Config.DB_PATH)
+        curs = conn.cursor()
+        # Elimina i record con data precedente a retention days configurato
+        curs.execute(f"DELETE FROM temphum WHERE datetime < datetime('now', '-{Config.DATA_RETENTION_DAYS} days')")
+        # Inserisci nuovo record
+        curs.execute("INSERT INTO temphum VALUES (datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
+        conn.commit()
+        conn.close()
+        logger.info(f"Logged values - Temp: {temp}, Hum: {hum}")
+    except Exception as e:
+        logger.error(f"Failed to log values to database: {e}")
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        print("Connected to broker ", MQTT_SERVER)
+        logger.info(f"Connected to broker {Config.MQTT_BROKER}")
         # Sottoscrivi al topic
-        client.subscribe(MQTT_TOPIC_TEMPHUM, qos=1)
+        client.subscribe(Config.MQTT_TOPIC_TEMPHUM.encode(), qos=1)
     else:
-        print("Connection to broker failed with code", rc)
+        logger.error(f"Connection to broker failed with code {rc}")
 
 def on_message(client, userdata, msg):
-    if msg.topic == MQTT_TOPIC_TEMPHUM:
-        print(msg.topic + " " + str(msg.payload))
+    if msg.topic == Config.MQTT_TOPIC_TEMPHUM:
+        try:
+            logger.info(f"{msg.topic} {msg.payload}")
 
-        values = msg.payload.split(",")
-        temperature = float(values[0])
-        humidity = float(values[1])
-        print("{:.2f}".format(temperature) + "," + "{:.2f}".format(humidity))
-        log_values("DHT_01", temperature, humidity)
+            values = msg.payload.decode().split(",")
+            if len(values) != 2:
+                logger.error(f"Invalid payload format: {msg.payload}")
+                return
 
-        # Wait 10 minutes before return to listening status
-        time.sleep(600)
+            temperature = float(values[0])
+            humidity = float(values[1])
+            logger.info(f"{temperature:.2f},{humidity:.2f}")
+            log_values("DHT_01", temperature, humidity)
 
-        # Chiudi il programma dopo aver gestito il messaggio
-        #client.disconnect()
-        #sys.exit()
+            # Wait before return to listening status
+            time.sleep(Config.MQTT_SLEEP_INTERVAL)
+        except (ValueError, IndexError) as e:
+            logger.error(f"Failed to parse MQTT message: {e}")
+        except Exception as e:
+            logger.error(f"Error processing MQTT message: {e}")
 
 client = mqtt.Client("python_pahoMQTT_lab_app")
 client.on_connect = on_connect
 client.on_message = on_message
 
-print("Connecting to broker ", MQTT_SERVER)
-client.connect(MQTT_SERVER)
+logger.info(f"Connecting to broker {Config.MQTT_BROKER}")
+client.connect(Config.MQTT_BROKER)
 
 # Esegui il loop fino a quando il programma si chiude
 client.loop_forever()
