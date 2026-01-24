@@ -1,4 +1,4 @@
-# Core dependencies - versioni compatibili con Raspberry Pi Python 3.7
+# Core dependencies - versioni fisse per compatibilità
 Flask==1.1.4
 Werkzeug==1.0.1
 Jinja2==2.11.3
@@ -9,27 +9,27 @@ click==7.1.2
 # MQTT client
 paho-mqtt==1.6.1
 
-# Hardware dependencies (Raspberry Pi specific)
-Adafruit-Blinka==8.40.0
-adafruit-circuitpython-dht==4.0.2
-Adafruit-PlatformDetect==3.58.0
-Adafruit-PureIO==1.1.11
-RPi.GPIO==0.7.1
-rpi-ws281x==5.0.0
-picamera==1.13
+# Hardware dependencies (Raspberry Pi specific) - versioni flessibili
+Adafruit-Blinka
+adafruit-circuitpython-dht
+Adafruit-PlatformDetect
+Adafruit-PureIO
+RPi.GPIO
+rpi-ws281x
+picamera
 
 # Utilities
-python-dateutil==2.8.2
-pyserial==3.5
-six==1.16.0
-typing-extensions==4.9.0
+python-dateutil
+pyserial
+six
+typing-extensions
 
 # WSGI server
-uWSGI==2.0.24
+uWSGI
 
 # USB support (se necessario)
-pyusb==1.2.1
-pyftdi==0.55.0
+pyusb
+pyftdi
 
 # IPC (se necessario)
-sysv-ipc==1.1.0
+sysv-ipc
