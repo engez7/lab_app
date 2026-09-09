@@ -5,7 +5,7 @@ import time
 import dht 
 
 # Set client STATIC IP!!
-# For ESP-8266 from 192.168.1.101...
+# Example only: adapt these to your own local network (typically 192.168.x.x).
 CLIENT_IP = "192.168.1.102"
 
 #CLIENT_HOST_NAME = "DHT_z01_n02"    #NON FUNZIONA: LA VODAFONE STATION NON VEDE IL NOME DELL'ESP8266!!!
@@ -15,12 +15,12 @@ ROUTER_IP = "192.168.1.1"
 DNS_IP = "8.8.8.8"
 
 MQTT_CLIENT_ID = "esp_client_z01_n02" #client zone 01 number 02
-MQTT_SERVER = "192.168.1.254"
+MQTT_SERVER = "192.168.1.254"  # example only: your MQTT broker's local IP
 MQTT_TOPIC_TEMPHUM = b"esp/dht/TempHum_z01" # temperature and humidity zone 01
 mqtt_connected = False # flag for... mqtt is connected or not
 
-WIFI_SSID = "TIM-43200697"
-WIFI_PASSWORD = "Jm2bdPATr7eZep6Z9KAefcGk"
+WIFI_SSID = "YOUR_WIFI_SSID"
+WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
 
 # To wait to publish at least 5 s...
 last_message = 0

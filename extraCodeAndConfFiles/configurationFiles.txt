@@ -1,8 +1,8 @@
 *******************************************************
 
-pi@raspez:/etc $ cat msmtprc 
+pi@raspez:/etc $ cat msmtprc
 account default
-host smtp.libero.it
+host smtp.your-provider.example
 port 465
 logfile /tmp/msmtp.log
 tls on
@@ -10,14 +10,14 @@ tls_starttls off
 tls_trust_file /etc/ssl/certs/ca-certificates.crt
 
 auth login
-user ingezio
-password Liber0Liber0@
-from ingezio@libero.it
+user your-email-username
+password your-smtp-password
+from your-email@your-provider.example
 
-# OLD MTA alice...
+# OLD MTA (alternative provider example)...
 
 #account default
-#host out.alice.it
+#host smtp.other-provider.example
 #port 587
 #logfile /tmp/msmtp.log
 #tls on
@@ -25,9 +25,9 @@ from ingezio@libero.it
 #tls_trust_file /etc/ssl/certs/ca-certificates.crt
 
 #auth login
-#user funkycactus
-#password *************
-#from funkycactus@alice.it
+#user your-other-email-username
+#password your-other-smtp-password
+#from your-other-email@other-provider.example
 
 *******************************************************
 

@@ -20,3 +20,10 @@ class Config:
 
     # MQTT logging interval (seconds)
     MQTT_SLEEP_INTERVAL = int(os.environ.get('MQTT_SLEEP_INTERVAL', '600'))
+
+    # HTTP Basic Auth credentials protecting the relay control routes
+    # (/T1_on/, /T1_off/). If either is unset, those routes deny all
+    # requests by default (fail closed) instead of falling back to a
+    # guessable default.
+    AUTH_USERNAME = os.environ.get('AUTH_USERNAME')
+    AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD')

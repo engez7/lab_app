@@ -1,4 +1,5 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, Response
+from functools import wraps
 import time
 import datetime
 import sqlite3
@@ -27,6 +28,35 @@ def send_mqtt_message(message):
         logger.error(f"Failed to send MQTT message: {e}")
         raise
 
+# AUTENTICAZIONE HTTP BASIC per le route di controllo del relay
+# Le credenziali si configurano tramite le variabili d'ambiente
+# AUTH_USERNAME / AUTH_PASSWORD (vedi README.md / .env.example).
+def check_auth(username, password):
+    """Verifica le credenziali rispetto a quelle configurate via env.
+    Se non sono configurate, nega sempre l'accesso (fail closed)."""
+    expected_user = Config.AUTH_USERNAME
+    expected_pass = Config.AUTH_PASSWORD
+    if not expected_user or not expected_pass:
+        logger.warning("AUTH_USERNAME/AUTH_PASSWORD non configurate: accesso negato")
+        return False
+    return username == expected_user and password == expected_pass
+
+def authenticate():
+    return Response(
+        "Accesso non autorizzato: credenziali richieste per controllare il relay.",
+        401,
+        {'WWW-Authenticate': 'Basic realm="Lab App - Relay Control"'}
+    )
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
 # T1 CONTROL
 T1_status = "OFF"  # Stato iniziale del relay
 
@@ -35,6 +65,7 @@ def index():
     return render_template('index.html')
 
 @app.route("/T1_on/", methods=['POST'])
+@requires_auth
 def T1_on():
     global T1_status
     send_mqtt_message("ON")  # Pubblica il comando MQTT
@@ -42,6 +73,7 @@ def T1_on():
     return render_template('index.html', T1_status=T1_status)
 
 @app.route("/T1_off/", methods=['POST'])
+@requires_auth
 def T1_off():
     global T1_status
     send_mqtt_message("OFF")  # Pubblica il comando MQTT
